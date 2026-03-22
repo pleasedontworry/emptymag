@@ -2,11 +2,11 @@
 
 export const dynamic = "force-dynamic";
 
-import { FormEvent, useState } from "react";
+import { Suspense, FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -59,39 +59,41 @@ export default function AdminLoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium">Логин</label>
-            <input
-              type="text"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none focus:border-black"
-              placeholder="admin"
-              required
-            />
-          </div>
+          <input
+            type="text"
+            value={login}
+            onChange={(e) => setLogin(e.target.value)}
+            className="w-full rounded-xl border border-zinc-300 px-4 py-3"
+            placeholder="admin"
+            required
+          />
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">Пароль</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none focus:border-black"
-              placeholder="••••••••"
-              required
-            />
-          </div>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-xl border border-zinc-300 px-4 py-3"
+            placeholder="••••••••"
+            required
+          />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-black px-5 py-3 text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-black px-5 py-3 text-white"
           >
             {loading ? "Входим..." : "Войти"}
           </button>
         </form>
       </div>
     </main>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<p className="p-10 text-center">Загрузка...</p>}>
+      <LoginForm />
+    </Suspense>
   );
 }
