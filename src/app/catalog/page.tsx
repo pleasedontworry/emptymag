@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -248,21 +250,21 @@ export default function CatalogPage() {
                       : "Нет в наличии"}
                   </p>
 
-                    <button
-                      onClick={(e) => {
+                  <button
+                    onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       addToCart(product);
-                      }}
+                    }}
                     disabled={product.stock === 0}
                     className={`w-full rounded-lg py-2 text-sm font-medium transition ${
                       product.stock > 0
-                      ? "bg-black text-white hover:opacity-90"
-                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      }`}
->
-  {product.stock > 0 ? "В корзину" : "Нет в наличии"}
-</button>
+                        ? "bg-black text-white hover:opacity-90"
+                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    {product.stock > 0 ? "В корзину" : "Нет в наличии"}
+                  </button>
                 </div>
               </div>
             ))}
