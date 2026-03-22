@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -60,7 +58,9 @@ export default function CatalogPage() {
     }
 
     if (selectedCategory !== "all") {
-      result = result.filter((product) => product.category === selectedCategory);
+      result = result.filter(
+        (product) => product.category === selectedCategory
+      );
     }
 
     if (onlyInStock) {
