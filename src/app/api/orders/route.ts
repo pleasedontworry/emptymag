@@ -29,7 +29,6 @@ async function sendTelegramMessage(text: string) {
     );
 
     const data = await res.json();
-
     console.log("📩 TELEGRAM RESPONSE:", data);
   } catch (error) {
     console.error("❌ TELEGRAM ERROR:", error);
@@ -68,13 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const {
-      customerName,
-      phone,
-      telegram,
-      comment,
-      items,
-    } = body;
+    const { customerName, phone, telegram, comment, items } = body;
 
     if (!customerName || !phone) {
       return NextResponse.json(
@@ -148,28 +141,28 @@ export async function POST(request: NextRequest) {
     const itemsText = order.items
       .map(
         (item) =>
-          `• ${item.productName} × ${item.quantity} — ${item.price * item.quantity} грн`
+          `• ${item.productName} × ${item.quantity} — ${
+            item.price * item.quantity
+          } грн`
       )
       .join("\n");
 
-    await sendTelegramMessage(`
-🛒 <b>Новый заказ!</b>
+    await sendTelegramMessage(
+      `🛒 НОВЫЙ ЗАКАЗ
 
-👤 <b>Имя:</b> ${order.customerName}
-📞 <b>Телефон:</b> ${order.phone}
-💬 <b>Telegram клиента:</b> ${order.telegram || "не указан"}
+👤 Имя: ${order.customerName}
+📞 Телефон: ${order.phone}
+💬 Telegram клиента: ${order.telegram || "не указан"}
 
-📦 <b>Товары:</b>
+📦 Товары:
 ${itemsText}
 
-💰 <b>Сумма:</b> ${order.totalPrice} грн
+💰 Сумма: ${order.totalPrice} грн
 
-📝 <b>Комментарий:</b>
-${order.comment || "нет"}
-`);
+📝 Комментарий: ${order.comment || "нет"}`
+    );
 
     return NextResponse.json(order);
-
   } catch (error) {
     console.error("CREATE ORDER ERROR:", error);
 
