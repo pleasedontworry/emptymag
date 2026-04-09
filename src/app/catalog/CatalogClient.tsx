@@ -5,12 +5,21 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProducts } from "@/context/ProductContext";
 import { useCart } from "@/context/CartContext";
+import { toast } from "sonner";
 
 const CATEGORY_LABELS: Record<string, string> = {
   liquids: "Жидкости",
   pods: "Под-системы",
   accessories: "Аксессуары",
 };
+
+const LIQUID_BRAND_LABELS: Record<string, string> = {
+  Chaser: "Chaser",
+  ElfLiq: "ElfLiq",
+  Lucky: "Lucky",
+};
+
+const LIQUID_BRANDS = ["all", "Chaser", "ElfLiq", "Lucky"];
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -22,20 +31,23 @@ export default function CatalogPage() {
   const router = useRouter();
 
   const urlCategory = searchParams.get("category");
+  const urlBrand = searchParams.get("brand");
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(
     urlCategory ?? "all"
+  );
+  const [selectedLiquidBrand, setSelectedLiquidBrand] = useState(
+    urlBrand ?? "all"
   );
   const [sort, setSort] = useState("default");
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (urlCategory) {
-      setSelectedCategory(urlCategory);
-    }
-  }, [urlCategory]);
+    setSelectedCategory(urlCategory ?? "all");
+    setSelectedLiquidBrand(urlBrand ?? "all");
+  }, [urlCategory, urlBrand]);
 
   const categories = useMemo(() => {
     return [
@@ -63,6 +75,14 @@ export default function CatalogPage() {
       );
     }
 
+    if (selectedLiquidBrand !== "all") {
+      result = result.filter(
+        (product) =>
+          product.category === "liquids" &&
+          product.liquidBrand === selectedLiquidBrand
+      );
+    }
+
     if (onlyInStock) {
       result = result.filter((product) => product.stock > 0);
     }
@@ -84,7 +104,14 @@ export default function CatalogPage() {
     }
 
     return result;
-  }, [products, search, selectedCategory, sort, onlyInStock]);
+  }, [
+    products,
+    search,
+    selectedCategory,
+    selectedLiquidBrand,
+    sort,
+    onlyInStock,
+  ]);
 
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
 
@@ -94,20 +121,57 @@ export default function CatalogPage() {
     return filteredProducts.slice(start, end);
   }, [filteredProducts, page]);
 
+  const updateUrl = (category: string, brand: string) => {
+    const params = new URLSearchParams();
+
+    if (category !== "all") {
+      params.set("category", category);
+    }
+
+    if (brand !== "all") {
+      params.set("brand", brand);
+    }
+
+    const query = params.toString();
+    router.push(query ? `/catalog?${query}` : "/catalog");
+  };
+
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
     setPage(1);
 
-    if (value === "all") {
-      router.push("/catalog");
-    } else {
-      router.push(`/catalog?category=${value}`);
+    const nextBrand =
+      value === "liquids" || value === "all" ? selectedLiquidBrand : "all";
+
+    if (value !== "liquids" && value !== "all") {
+      setSelectedLiquidBrand("all");
+      updateUrl(value, "all");
+      return;
     }
+
+    updateUrl(value, nextBrand);
+  };
+
+  const handleLiquidBrandChange = (value: string) => {
+    setSelectedLiquidBrand(value);
+    setPage(1);
+
+    if (value === "all") {
+      updateUrl(selectedCategory, "all");
+      return;
+    }
+
+    const nextCategory =
+      selectedCategory === "all" ? "liquids" : selectedCategory;
+
+    setSelectedCategory("liquids");
+    updateUrl(nextCategory === "liquids" ? "liquids" : nextCategory, value);
   };
 
   const resetFilters = () => {
     setSearch("");
     setSelectedCategory("all");
+    setSelectedLiquidBrand("all");
     setSort("default");
     setOnlyInStock(false);
     setPage(1);
@@ -115,11 +179,14 @@ export default function CatalogPage() {
     router.push("/catalog");
   };
 
+  const showLiquidBrandFilter =
+    selectedCategory === "all" || selectedCategory === "liquids";
+
   return (
     <main className="container mx-auto px-4 py-10">
       <h1 className="mb-6 text-4xl font-bold">Каталог</h1>
 
-      <div className="mb-6 flex flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap gap-3">
         {[
           { value: "all", label: "Все" },
           { value: "liquids", label: "Жидкости" },
@@ -143,6 +210,28 @@ export default function CatalogPage() {
           );
         })}
       </div>
+
+      {showLiquidBrandFilter && (
+        <div className="mb-6 flex flex-wrap gap-3">
+          {LIQUID_BRANDS.map((brand) => {
+            const active = selectedLiquidBrand === brand;
+
+            return (
+              <button
+                key={brand}
+                onClick={() => handleLiquidBrandChange(brand)}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                  active
+                    ? "bg-black text-white"
+                    : "bg-gray-100 hover:bg-gray-200"
+                }`}
+              >
+                {brand === "all" ? "Все жижи" : LIQUID_BRAND_LABELS[brand]}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="mb-8 grid gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:grid-cols-4">
         <input
@@ -230,6 +319,9 @@ export default function CatalogPage() {
                 <div className="p-4">
                   <p className="mb-1 text-sm text-gray-500">
                     {CATEGORY_LABELS[product.category]}
+                    {product.category === "liquids" && product.liquidBrand
+                      ? ` • ${product.liquidBrand}`
+                      : ""}
                   </p>
 
                   <h2 className="mb-2 text-lg font-semibold">
@@ -255,12 +347,13 @@ export default function CatalogPage() {
                       e.preventDefault();
                       e.stopPropagation();
                       addToCart(product);
+                      toast.success("Товар добавлен в корзину");
                     }}
                     disabled={product.stock === 0}
                     className={`w-full rounded-lg py-2 text-sm font-medium transition ${
                       product.stock > 0
                         ? "bg-black text-white hover:opacity-90"
-                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "cursor-not-allowed bg-gray-200 text-gray-500"
                     }`}
                   >
                     {product.stock > 0 ? "В корзину" : "Нет в наличии"}

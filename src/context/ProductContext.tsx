@@ -18,6 +18,7 @@ export type Product = {
   price: number;
   image: string;
   category: string;
+  liquidBrand?: "Chaser" | "ElfLiq" | "Lucky";
   stock: number;
   isActive: boolean;
   createdAt?: string;

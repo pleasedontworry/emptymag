@@ -4,6 +4,8 @@ export type ProductCategory =
   | "disposables"
   | "accessories";
 
+export type LiquidBrand = "Chase" | "ElfLiq" | "Lucky";
+
 export type StoreProduct = {
   id: number;
   name: string;
@@ -14,6 +16,7 @@ export type StoreProduct = {
   stock: number;
   isActive: boolean;
   category: ProductCategory;
+  liquidBrand?: LiquidBrand;
 };
 
 export const categoryLabels: Record<ProductCategory, string> = {
@@ -29,6 +32,14 @@ export const categoryOptions: ProductCategory[] = [
   "disposables",
   "accessories",
 ];
+
+export const liquidBrandLabels: Record<LiquidBrand, string> = {
+  Chase: "Chase",
+  ElfLiq: "ElfLiq",
+  Lucky: "Lucky",
+};
+
+export const liquidBrandOptions: LiquidBrand[] = ["Chase", "ElfLiq", "Lucky"];
 
 export function slugify(value: string): string {
   const map: Record<string, string> = {
@@ -95,6 +106,7 @@ export const defaultProducts: StoreProduct[] = [
     stock: 12,
     isActive: true,
     category: "liquids",
+    liquidBrand: "Chase",
   },
   {
     id: 2,
@@ -106,6 +118,7 @@ export const defaultProducts: StoreProduct[] = [
     stock: 8,
     isActive: true,
     category: "liquids",
+    liquidBrand: "ElfLiq",
   },
   {
     id: 3,
@@ -117,5 +130,6 @@ export const defaultProducts: StoreProduct[] = [
     stock: 0,
     isActive: true,
     category: "liquids",
+    liquidBrand: "Lucky",
   },
 ];

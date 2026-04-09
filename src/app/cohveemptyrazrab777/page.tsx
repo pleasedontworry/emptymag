@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 type ProductCategory = "liquids" | "pods" | "disposables" | "accessories";
 type OrderStatus = "pending" | "confirmed" | "completed" | "cancelled";
+type LiquidBrand = "Chaser" | "ElfLiq" | "Lucky";
 
 type Product = {
   id: number;
@@ -20,6 +21,7 @@ type Product = {
   stock: number;
   isActive: boolean;
   category: ProductCategory;
+  liquidBrand?: LiquidBrand | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -59,6 +61,7 @@ type ProductDraft = {
   description: string;
   stock: string;
   category: ProductCategory;
+  liquidBrand: LiquidBrand | "";
 };
 
 const CATEGORY_LABELS: Record<ProductCategory, string> = {
@@ -90,6 +93,7 @@ const INITIAL_NEW_PRODUCT: ProductDraft = {
   description: "",
   stock: "",
   category: "liquids",
+  liquidBrand: "",
 };
 
 function formatPrice(value: number) {
@@ -114,15 +118,17 @@ export default function HiddenAdminPage() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [savingProductId, setSavingProductId] = useState<number | null>(null);
   const [deletingProductId, setDeletingProductId] = useState<number | null>(
-    null,
+    null
   );
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const [productDrafts, setProductDrafts] = useState<Record<number, ProductDraft>>(
-    {},
+  const [productDrafts, setProductDrafts] = useState<
+    Record<number, ProductDraft>
+  >({});
+  const [newProduct, setNewProduct] = useState<ProductDraft>(
+    INITIAL_NEW_PRODUCT
   );
-  const [newProduct, setNewProduct] = useState<ProductDraft>(INITIAL_NEW_PRODUCT);
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -163,6 +169,8 @@ export default function HiddenAdminPage() {
           description: product.description,
           stock: String(product.stock),
           category: product.category,
+          liquidBrand:
+            product.category === "liquids" ? product.liquidBrand ?? "" : "",
         };
       }
 
@@ -220,7 +228,7 @@ export default function HiddenAdminPage() {
     } catch (error) {
       console.error(error);
       toast.error(
-        error instanceof Error ? error.message : "Не удалось выйти из админки",
+        error instanceof Error ? error.message : "Не удалось выйти из админки"
       );
     } finally {
       setLoggingOut(false);
@@ -230,7 +238,7 @@ export default function HiddenAdminPage() {
   const updateDraft = (
     productId: number,
     field: keyof ProductDraft,
-    value: string,
+    value: string
   ) => {
     setProductDrafts((prev) => ({
       ...prev,
@@ -276,6 +284,10 @@ export default function HiddenAdminPage() {
       return "Остаток должен быть целым числом от 0";
     }
 
+    if (draft.category === "liquids" && !draft.liquidBrand) {
+      return "Для жидкости выбери подкатегорию";
+    }
+
     return null;
   };
 
@@ -303,13 +315,17 @@ export default function HiddenAdminPage() {
           description: newProduct.description.trim(),
           stock: Number(newProduct.stock),
           category: newProduct.category,
+          liquidBrand:
+            newProduct.category === "liquids"
+              ? newProduct.liquidBrand
+              : undefined,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || "Не удалось создать товар");
+        throw new Error(data?.error || data?.message || "Не удалось создать товар");
       }
 
       toast.success("Товар добавлен");
@@ -318,7 +334,7 @@ export default function HiddenAdminPage() {
     } catch (error) {
       console.error(error);
       toast.error(
-        error instanceof Error ? error.message : "Не удалось создать товар",
+        error instanceof Error ? error.message : "Не удалось создать товар"
       );
     } finally {
       setCreatingProduct(false);
@@ -353,13 +369,15 @@ export default function HiddenAdminPage() {
           description: draft.description.trim(),
           stock: Number(draft.stock),
           category: draft.category,
+          liquidBrand:
+            draft.category === "liquids" ? draft.liquidBrand : undefined,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || "Не удалось сохранить товар");
+        throw new Error(data?.error || data?.message || "Не удалось сохранить товар");
       }
 
       toast.success("Товар обновлён");
@@ -367,7 +385,7 @@ export default function HiddenAdminPage() {
     } catch (error) {
       console.error(error);
       toast.error(
-        error instanceof Error ? error.message : "Не удалось сохранить товар",
+        error instanceof Error ? error.message : "Не удалось сохранить товар"
       );
     } finally {
       setSavingProductId(null);
@@ -376,7 +394,7 @@ export default function HiddenAdminPage() {
 
   const deleteProduct = async (productId: number) => {
     const confirmed = window.confirm(
-      "Удалить товар? Это действие нельзя отменить.",
+      "Удалить товар? Это действие нельзя отменить."
     );
 
     if (!confirmed) return;
@@ -391,7 +409,7 @@ export default function HiddenAdminPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || "Не удалось удалить товар");
+        throw new Error(data?.error || data?.message || "Не удалось удалить товар");
       }
 
       toast.success("Товар удалён");
@@ -406,7 +424,7 @@ export default function HiddenAdminPage() {
     } catch (error) {
       console.error(error);
       toast.error(
-        error instanceof Error ? error.message : "Не удалось удалить товар",
+        error instanceof Error ? error.message : "Не удалось удалить товар"
       );
     } finally {
       setDeletingProductId(null);
@@ -437,7 +455,7 @@ export default function HiddenAdminPage() {
     } catch (error) {
       console.error(error);
       toast.error(
-        error instanceof Error ? error.message : "Не удалось обновить заказ",
+        error instanceof Error ? error.message : "Не удалось обновить заказ"
       );
     } finally {
       setUpdatingOrderId(null);
@@ -446,7 +464,7 @@ export default function HiddenAdminPage() {
 
   const deleteOrder = async (orderId: number) => {
     const confirmed = window.confirm(
-      "Удалить заказ?\n\nЕсли заказ не был отменён, товары будут возвращены на склад.",
+      "Удалить заказ?\n\nЕсли заказ не был отменён, товары будут возвращены на склад."
     );
 
     if (!confirmed) return;
@@ -470,7 +488,7 @@ export default function HiddenAdminPage() {
     } catch (error) {
       console.error(error);
       toast.error(
-        error instanceof Error ? error.message : "Не удалось удалить заказ",
+        error instanceof Error ? error.message : "Не удалось удалить заказ"
       );
     } finally {
       setDeletingOrderId(null);
@@ -481,13 +499,13 @@ export default function HiddenAdminPage() {
     const total = orders.length;
     const pending = orders.filter((order) => order.status === "pending").length;
     const confirmed = orders.filter(
-      (order) => order.status === "confirmed",
+      (order) => order.status === "confirmed"
     ).length;
     const completed = orders.filter(
-      (order) => order.status === "completed",
+      (order) => order.status === "completed"
     ).length;
     const cancelled = orders.filter(
-      (order) => order.status === "cancelled",
+      (order) => order.status === "cancelled"
     ).length;
 
     const revenue = orders
@@ -627,9 +645,15 @@ export default function HiddenAdminPage() {
                   <label className="text-sm font-medium">Категория</label>
                   <select
                     value={newProduct.category}
-                    onChange={(e) =>
-                      updateNewProduct("category", e.target.value)
-                    }
+                    onChange={(e) => {
+                      const nextCategory = e.target.value as ProductCategory;
+                      setNewProduct((prev) => ({
+                        ...prev,
+                        category: nextCategory,
+                        liquidBrand:
+                          nextCategory === "liquids" ? prev.liquidBrand : "",
+                      }));
+                    }}
                     className="h-11 rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-900"
                   >
                     <option value="liquids">Жидкости</option>
@@ -638,6 +662,29 @@ export default function HiddenAdminPage() {
                     <option value="accessories">Аксессуары</option>
                   </select>
                 </div>
+
+                {newProduct.category === "liquids" && (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      Подкатегория жидкости
+                    </label>
+                    <select
+                      value={newProduct.liquidBrand}
+                      onChange={(e) =>
+                        updateNewProduct(
+                          "liquidBrand",
+                          e.target.value as LiquidBrand | ""
+                        )
+                      }
+                      className="h-11 rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-900"
+                    >
+                      <option value="">Выбери подкатегорию</option>
+                      <option value="Chaser">Chaser</option>
+                      <option value="ElfLiq">ElfLiq</option>
+                      <option value="Lucky">Lucky</option>
+                    </select>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">Цена</label>
@@ -664,56 +711,54 @@ export default function HiddenAdminPage() {
                 </div>
 
                 <div className="flex flex-col gap-2 md:col-span-2">
-                <label className="text-sm font-medium">
-                 Ссылка на изображение
-                </label>
+                  <label className="text-sm font-medium">
+                    Ссылка на изображение
+                  </label>
 
-                <input
+                  <input
                     value={newProduct.image}
                     onChange={(e) => updateNewProduct("image", e.target.value)}
                     className="h-11 rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-900"
                     placeholder="https://..."
                   />
 
-  {/* КНОПКА ЗАГРУЗКИ */}
-  <label className="mt-2 flex w-fit cursor-pointer items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-    Загрузить фото
-    <input
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={async (e) => {
-        if (!e.target.files?.[0]) return;
+                  <label className="mt-2 flex w-fit cursor-pointer items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+                    Загрузить фото
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        if (!e.target.files?.[0]) return;
 
-        const formData = new FormData();
-        formData.append("file", e.target.files[0]);
+                        const formData = new FormData();
+                        formData.append("file", e.target.files[0]);
 
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
+                        const res = await fetch("/api/upload", {
+                          method: "POST",
+                          body: formData,
+                        });
 
-        const data = await res.json();
+                        const data = await res.json();
 
-        if (data.url) {
-          updateNewProduct("image", data.url);
-          toast.success("Фото загружено");
-        } else {
-          toast.error("Ошибка загрузки");
-        }
-      }}
-    />
-  </label>
+                        if (data.url) {
+                          updateNewProduct("image", data.url);
+                          toast.success("Фото загружено");
+                        } else {
+                          toast.error("Ошибка загрузки");
+                        }
+                      }}
+                    />
+                  </label>
 
-  {/* ПРЕДПРОСМОТР */}
-  {newProduct.image && (
-    <img
-      src={newProduct.image}
-      alt="preview"
-      className="mt-3 h-32 w-32 rounded-xl border object-cover"
-    />
-  )}
-</div>
+                  {newProduct.image && (
+                    <img
+                      src={newProduct.image}
+                      alt="preview"
+                      className="mt-3 h-32 w-32 rounded-xl border object-cover"
+                    />
+                  )}
+                </div>
 
                 <div className="flex flex-col gap-2 md:col-span-2">
                   <label className="text-sm font-medium">Описание</label>
@@ -809,6 +854,9 @@ export default function HiddenAdminPage() {
                         <h3 className="text-lg font-semibold">{product.name}</h3>
                         <p className="text-sm text-zinc-500">
                           ID: {product.id} · {CATEGORY_LABELS[product.category]}
+                          {product.category === "liquids" && product.liquidBrand
+                            ? ` · ${product.liquidBrand}`
+                            : ""}
                         </p>
                       </div>
 
@@ -852,18 +900,24 @@ export default function HiddenAdminPage() {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                          <label className="text-sm font-medium">
-                            Категория
-                          </label>
+                          <label className="text-sm font-medium">Категория</label>
                           <select
                             value={draft.category}
-                            onChange={(e) =>
-                              updateDraft(
-                                product.id,
-                                "category",
-                                e.target.value,
-                              )
-                            }
+                            onChange={(e) => {
+                              const nextCategory =
+                                e.target.value as ProductCategory;
+                              setProductDrafts((prev) => ({
+                                ...prev,
+                                [product.id]: {
+                                  ...prev[product.id],
+                                  category: nextCategory,
+                                  liquidBrand:
+                                    nextCategory === "liquids"
+                                      ? prev[product.id].liquidBrand
+                                      : "",
+                                },
+                              }));
+                            }}
                             className="h-11 rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-900"
                           >
                             <option value="liquids">Жидкости</option>
@@ -872,6 +926,30 @@ export default function HiddenAdminPage() {
                             <option value="accessories">Аксессуары</option>
                           </select>
                         </div>
+
+                        {draft.category === "liquids" && (
+                          <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium">
+                              Подкатегория жидкости
+                            </label>
+                            <select
+                              value={draft.liquidBrand}
+                              onChange={(e) =>
+                                updateDraft(
+                                  product.id,
+                                  "liquidBrand",
+                                  e.target.value
+                                )
+                              }
+                              className="h-11 rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-900"
+                            >
+                              <option value="">Выбери подкатегорию</option>
+                              <option value="Chaser">Chaser</option>
+                              <option value="ElfLiq">ElfLiq</option>
+                              <option value="Lucky">Lucky</option>
+                            </select>
+                          </div>
+                        )}
 
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-medium">Цена</label>
@@ -920,7 +998,7 @@ export default function HiddenAdminPage() {
                               updateDraft(
                                 product.id,
                                 "description",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             rows={4}
@@ -1061,7 +1139,7 @@ export default function HiddenAdminPage() {
                       | "newest"
                       | "oldest"
                       | "price-desc"
-                      | "price-asc",
+                      | "price-asc"
                   )
                 }
                 className="h-11 rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-900"

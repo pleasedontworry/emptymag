@@ -17,6 +17,14 @@ function normalizeCategory(category: unknown): ProductCategory {
   return "liquids";
 }
 
+function normalizeLiquidBrand(brand: unknown): "Chaser" | "ElfLiq" | "Lucky" | null {
+  if (brand === "Chaser" || brand === "ElfLiq" || brand === "Lucky") {
+    return brand;
+  }
+
+  return null;
+}
+
 async function ensureUniqueSlug(slug: string) {
   const baseSlug = slugify(slug) || "product";
   let candidate = baseSlug;
@@ -82,6 +90,7 @@ export async function POST(request: NextRequest) {
     const price = Number(body?.price);
     const stock = Number(body?.stock);
     const category = normalizeCategory(body?.category);
+    const liquidBrand = normalizeLiquidBrand(body?.liquidBrand);
 
     if (
       !name ||
@@ -109,6 +118,7 @@ export async function POST(request: NextRequest) {
         description,
         stock,
         category,
+        liquidBrand, // 👈 ДОБАВИЛИ
         isActive: true,
       },
     });

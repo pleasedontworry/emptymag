@@ -21,6 +21,16 @@ function normalizeCategory(category: unknown): ProductCategory {
   return "liquids";
 }
 
+function normalizeLiquidBrand(
+  brand: unknown
+): "Chaser" | "ElfLiq" | "Lucky" | undefined {
+  if (brand === "Chaser" || brand === "ElfLiq" || brand === "Lucky") {
+    return brand;
+  }
+
+  return undefined;
+}
+
 async function ensureUniqueSlug(slug: string, currentId: number) {
   const baseSlug = slugify(slug) || "product";
   let candidate = baseSlug;
@@ -71,6 +81,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const price = Number(body.price);
     const stock = Number(body.stock);
     const category = normalizeCategory(body.category);
+    const liquidBrand = normalizeLiquidBrand(body.liquidBrand);
 
     if (
       !name ||
@@ -87,7 +98,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
       );
     }
 
-    const uniqueSlug = await ensureUniqueSlug(String(body.slug || name), numericId);
+    const uniqueSlug = await ensureUniqueSlug(
+      String(body.slug || name),
+      numericId
+    );
 
     const product = await prisma.product.update({
       where: { id: numericId },
@@ -99,6 +113,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         price,
         stock,
         category,
+        liquidBrand,
         isActive: true,
       },
     });
