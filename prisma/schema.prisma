@@ -23,15 +23,15 @@ enum LiquidBrand {
 }
 
 enum OrderStatus {
-  PENDING      // В обработке
-  CONFIRMED    // Подтвержден
-  COMPLETED    // Завершен
-  CANCELLED    // Отменен
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
 }
 
 enum PaymentMethod {
-  CARD         // Карта
-  CASH         // Наличные
+  CARD
+  CASH
 }
 
 // ---------------------- MODELS ----------------------
@@ -39,13 +39,13 @@ enum PaymentMethod {
 model User {
   id               Int      @id @default(autoincrement())
   email            String   @unique
-  password         String   // Хэшированный пароль
+  password         String
   firstName        String?
   lastName         String?
-  middleName       String?  // НОВОЕ: Отчество
+  middleName       String?
   phone            String?  @unique
-  totalSpent       Int      @default(0) // Общая сумма покупок
-  personalDiscount Int      @default(0) // НОВОЕ: Персональная скидка в процентах
+  totalSpent       Int      @default(0)
+  personalDiscount Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -61,7 +61,7 @@ model Product {
   description String
   stock       Int
   isActive    Boolean         @default(true)
-  isRedPrice  Boolean         @default(false) // НОВОЕ ПОЛЕ: Красная цена
+  isRedPrice  Boolean         @default(false)
   category    ProductCategory
   liquidBrand LiquidBrand?
   createdAt   DateTime        @default(now())
@@ -73,27 +73,24 @@ model Product {
 model Order {
   id            Int           @id @default(autoincrement())
   
-  // Привязка к пользователю (опционально, чтобы можно было покупать без аккаунта)
   userId        Int?
   user          User?         @relation(fields: [userId], references: [id])
   
-  // Разделенные поля ФИО
-  lastName      String
-  firstName     String
+  // Добавлен знак ?, чтобы существующие 128 заказов не вызывали ошибку
+  lastName      String?
+  firstName     String?
   middleName    String?
   
   phone         String
   telegram      String?
   comment       String?
   
-  // Статус и способ оплаты с дефолтными значениями
   status        OrderStatus   @default(PENDING)
   paymentMethod PaymentMethod @default(CASH)
   
-  // Суммы и скидка
   totalPrice    Int
   totalItems    Int
-  discount      Int           @default(0) // Размер скидки в процентах
+  discount      Int           @default(0)
   
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
