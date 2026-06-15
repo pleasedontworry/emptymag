@@ -23,12 +23,12 @@ export async function PATCH(
     }
 
     // Если уже отменён — ничего не делаем
-    if (order.status === "cancelled") {
+    if (order.status === "CANCELLED") {
       return NextResponse.json({ message: "Order already cancelled" })
     }
 
     // Возвращаем stock ТОЛЬКО если заказ был confirmed
-    if (order.status === "confirmed") {
+    if (order.status === "CONFIRMED") {
       for (const item of order.items) {
         await prisma.product.update({
           where: { id: item.productId },
@@ -44,7 +44,7 @@ export async function PATCH(
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
-        status: "cancelled",
+        status: "CANCELLED",
       },
     })
 
