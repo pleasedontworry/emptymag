@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------- ENUMS ----------------------
+
+enum ProductCategory {
+  liquids
+  pods
+  disposables
+  accessories
+}
+
+enum LiquidBrand {
+  Chaser
+  ElfLiq
+  Lucky
+}
+
+enum OrderStatus {
+  PENDING      // В обработке
+  CONFIRMED    // Подтвержден
+  COMPLETED    // Завершен
+  CANCELLED    // Отменен
+}
+
+enum PaymentMethod {
+  CARD         // Карта
+  CASH         // Наличные
+}
+
+// ---------------------- MODELS ----------------------
+
+model User {
+  id               Int      @id @default(autoincrement())
+  email            String   @unique
+  password         String   // Хэшированный пароль
+  firstName        String?
+  lastName         String?
+  middleName       String?  // НОВОЕ: Отчество
+  phone            String?  @unique
+  totalSpent       Int      @default(0) // Общая сумма покупок
+  personalDiscount Int      @default(0) // НОВОЕ: Персональная скидка в процентах
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  orders           Order[]
+}
+
+model Product {
+  id          Int             @id @default(autoincrement())
+  name        String
+  slug        String          @unique
+  price       Int
+  image       String
+  description String
+  stock       Int
+  isActive    Boolean         @default(true)
+  isRedPrice  Boolean         @default(false) // НОВОЕ ПОЛЕ: Красная цена
+  category    ProductCategory
+  liquidBrand LiquidBrand?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  
+  // Привязка к пользователю (опционально, чтобы можно было покупать без аккаунта)
+  userId        Int?
+  user          User?         @relation(fields: [userId], references: [id])
+  
+  // Разделенные поля ФИО
+  lastName      String
+  firstName     String
+  middleName    String?
+  
+  phone         String
+  telegram      String?
+  comment       String?
+  
+  // Статус и способ оплаты с дефолтными значениями
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod @default(CASH)
+  
+  // Суммы и скидка
+  totalPrice    Int
+  totalItems    Int
+  discount      Int           @default(0) // Размер скидки в процентах
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  productName String
+  productSlug String
+  price       Int
+  quantity    Int
+  image       String
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+}
