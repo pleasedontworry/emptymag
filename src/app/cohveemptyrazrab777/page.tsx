@@ -41,10 +41,11 @@ type OrderItem = {
 
 type Order = {
   id: number;
-  customerName: string;
+  firstName: string | null;
+  lastName: string | null;
+  middleName: string | null;
   phone: string;
-  email: string;
-  address: string;
+  telegram: string | null;
   comment: string | null;
   totalPrice: number;
   totalItems: number;
@@ -604,13 +605,14 @@ export default function HiddenAdminPage() {
       const matchesStatus =
         orderStatusFilter === "all" ? true : statusKey === orderStatusFilter;
 
+      const fullName = `${order.lastName || ""} ${order.firstName || ""} ${order.middleName || ""}`.toLowerCase();
+
       const matchesSearch =
         normalizedSearch.length === 0 ||
         String(order.id).includes(normalizedSearch) ||
-        (order.customerName && order.customerName.toLowerCase().includes(normalizedSearch)) ||
+        fullName.includes(normalizedSearch) ||
         (order.phone && order.phone.toLowerCase().includes(normalizedSearch)) ||
-        (order.email && order.email.toLowerCase().includes(normalizedSearch)) ||
-        (order.address && order.address.toLowerCase().includes(normalizedSearch));
+        (order.telegram && order.telegram.toLowerCase().includes(normalizedSearch));
 
       return matchesStatus && matchesSearch;
     });
@@ -797,7 +799,6 @@ export default function HiddenAdminPage() {
                   />
                 </div>
 
-                {/* НОВЫЙ БЛОК: Красная цена */}
                 <div className="flex flex-col gap-2 md:col-span-2">
                   <label className="flex items-center gap-3 cursor-pointer p-3 border rounded-xl hover:bg-red-50 transition border-red-200">
                     <input
@@ -1084,7 +1085,6 @@ export default function HiddenAdminPage() {
                           />
                         </div>
 
-                        {/* НОВЫЙ БЛОК ДЛЯ РЕДАКТИРОВАНИЯ: Красная цена */}
                         <div className="flex flex-col gap-2 md:col-span-2 xl:col-span-3">
                           <label className="flex items-center gap-3 cursor-pointer mt-1">
                             <input
@@ -1229,7 +1229,7 @@ export default function HiddenAdminPage() {
               <label className="text-sm font-medium">Поиск по заказам</label>
               <input
                 type="text"
-                placeholder="ID, имя, телефон, email, адрес"
+                placeholder="ID, имя, телефон, telegram"
                 value={orderSearch}
                 onChange={(e) => setOrderSearch(e.target.value)}
                 className="h-11 rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-900"
@@ -1330,7 +1330,7 @@ export default function HiddenAdminPage() {
                           <span className="font-medium text-zinc-900">
                             Клиент:
                           </span>{" "}
-                          {order.customerName}
+                          {order.lastName} {order.firstName} {order.middleName || ""}
                         </p>
                         <p>
                           <span className="font-medium text-zinc-900">
@@ -1338,18 +1338,14 @@ export default function HiddenAdminPage() {
                           </span>{" "}
                           {order.phone}
                         </p>
-                        <p>
-                          <span className="font-medium text-zinc-900">
-                            Email:
-                          </span>{" "}
-                          {order.email || "—"}
-                        </p>
-                        <p>
-                          <span className="font-medium text-zinc-900">
-                            Адрес:
-                          </span>{" "}
-                          {order.address || "—"}
-                        </p>
+                        {order.telegram && (
+                          <p>
+                            <span className="font-medium text-zinc-900">
+                              Telegram:
+                            </span>{" "}
+                            {order.telegram}
+                          </p>
+                        )}
                         {order.comment && (
                           <p>
                             <span className="font-medium text-zinc-900">

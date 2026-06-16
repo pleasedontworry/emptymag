@@ -47,6 +47,7 @@ export async function GET() {
       },
       include: {
         items: true,
+        user: true, // Добавлено, чтобы если нужно, подтягивать связь с аккаунтом
       },
     });
 
