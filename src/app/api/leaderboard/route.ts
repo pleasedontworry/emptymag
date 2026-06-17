@@ -43,8 +43,19 @@ export async function GET() {
 
       return Promise.all(sorted.map(async ([userId, count]) => {
         const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
+        
+        let displayName = "Гость";
+        
+        if (user) {
+          const firstName = user.firstName?.trim() || "";
+          const lastNameInitial = user.lastName?.trim() ? `${user.lastName.trim()[0]}.` : "";
+          
+          // Склеиваем Имя и первую букву фамилии (например: "София М.")
+          displayName = `${firstName} ${lastNameInitial}`.trim() || "Пользователь";
+        }
+
         return {
-          name: user ? `${user.lastName || ""} ${user.firstName || ""}`.trim() || "Пользователь" : "Гость",
+          name: displayName,
           count,
           userId: Number(userId)
         };
@@ -57,6 +68,7 @@ export async function GET() {
       accessories: await getTop("accessories"),
     });
   } catch (error) {
+    console.error("Ошибка загрузки лидерборда:", error);
     return NextResponse.json({ error: "Ошибка загрузки лидерборда" }, { status: 500 });
   }
 }
