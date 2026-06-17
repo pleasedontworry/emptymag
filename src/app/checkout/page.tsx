@@ -96,7 +96,11 @@ export default function CheckoutPage() {
       toast.error("Введите телефон");
       return false;
     }
-    if (form.telegram && !form.telegram.startsWith("@")) {
+    if (!form.telegram.trim()) {
+      toast.error("Введите Telegram");
+      return false;
+    }
+    if (!form.telegram.trim().startsWith("@")) {
       toast.error("Telegram должен начинаться с @");
       return false;
     }
@@ -126,7 +130,7 @@ export default function CheckoutPage() {
           lastName: form.lastName.trim(),
           middleName: form.middleName.trim() || null,
           phone: form.phone.trim(),
-          telegram: form.telegram.trim() || null,
+          telegram: form.telegram.trim(),
           comment: form.comment.trim() || null,
           paymentMethod: form.paymentMethod,
           discount: discount,
@@ -233,13 +237,14 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Telegram</label>
+                <label className="text-sm font-medium">Telegram <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={form.telegram}
                   onChange={(e) => handleChange("telegram", e.target.value)}
                   className="h-11 rounded-xl border border-gray-300 px-4 outline-none focus:border-black"
                   placeholder="@username"
+                  required
                 />
               </div>
             </div>

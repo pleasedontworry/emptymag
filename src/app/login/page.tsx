@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [loginInput, setLoginInput] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,9 +17,10 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    // NextAuth ожидает ключ "email", но мы передаем туда логин (почту или телеграм)
     const res = await signIn("credentials", {
       redirect: false,
-      email,
+      email: loginInput, 
       password,
     });
 
@@ -27,7 +28,6 @@ export default function LoginPage() {
       setError(res.error);
       setLoading(false);
     } else {
-      // После входа перенаправляем в личный кабинет
       router.push("/profile");
       router.refresh();
     }
@@ -49,10 +49,10 @@ export default function LoginPage() {
           )}
           <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <label htmlFor="email" className="sr-only">Email</label>
-              <input id="email" name="email" type="email" required
+              <label htmlFor="loginInput" className="sr-only">Email или Telegram</label>
+              <input id="loginInput" name="loginInput" type="text" required
                 className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-black focus:border-black sm:text-sm"
-                placeholder="Email адрес" value={email} onChange={(e) => setEmail(e.target.value)} />
+                placeholder="Email адрес или Telegram (@username)" value={loginInput} onChange={(e) => setLoginInput(e.target.value)} />
             </div>
             <div>
               <label htmlFor="password" className="sr-only">Пароль</label>

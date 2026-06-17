@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// Список популярных и надежных почтовых доменов
 const ALLOWED_DOMAINS = [
   "gmail.com",
   "icloud.com",
@@ -21,8 +20,9 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
-    phone: "", // Здесь будут храниться только 9 цифр
+    phone: "",
     email: "",
+    telegram: "",
     password: "",
   });
   
@@ -30,26 +30,28 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState({
     phone: "",
     email: "",
+    telegram: "",
   });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let { name, value } = e.target;
 
-    // Ограничение для Имени и Фамилии (только кириллица, пробел и дефис)
     if (name === "firstName" || name === "lastName") {
       value = value.replace(/[^а-яА-ЯёЁіІїЇєЄґҐ\s\-]/g, "");
     }
 
-    // Ограничение для телефона (только цифры и максимум 9 штук)
     if (name === "phone") {
       value = value.replace(/\D/g, "").slice(0, 9);
       if (fieldErrors.phone) setFieldErrors({ ...fieldErrors, phone: "" });
     }
 
-    // Очищаем ошибку email при вводе
     if (name === "email" && fieldErrors.email) {
       setFieldErrors({ ...fieldErrors, email: "" });
+    }
+
+    if (name === "telegram" && fieldErrors.telegram) {
+      setFieldErrors({ ...fieldErrors, telegram: "" });
     }
 
     setForm({ ...form, [name]: value });
@@ -59,23 +61,27 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setFieldErrors({ phone: "", email: "" });
+    setFieldErrors({ phone: "", email: "", telegram: "" });
 
     let hasErrors = false;
 
-    // 1. Валидация телефона (должно быть ровно 9 цифр)
     if (form.phone.length !== 9) {
       setFieldErrors((prev) => ({ ...prev, phone: "Номер должен состоять из 9 цифр" }));
       hasErrors = true;
     }
 
-    // 2. Валидация Email (проверка домена)
     const emailDomain = form.email.split("@")[1]?.toLowerCase();
     if (!emailDomain || !ALLOWED_DOMAINS.includes(emailDomain)) {
       setFieldErrors((prev) => ({ 
         ...prev, 
         email: `Разрешены почты: ${ALLOWED_DOMAINS.join(", ")}` 
       }));
+      hasErrors = true;
+    }
+
+    const tgHandle = form.telegram.trim();
+    if (!tgHandle.startsWith("@")) {
+      setFieldErrors((prev) => ({ ...prev, telegram: "Telegram должен начинаться с @" }));
       hasErrors = true;
     }
 
@@ -90,8 +96,8 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          // Перед отправкой на сервер склеиваем префикс и введенные 9 цифр
-          phone: `+380${form.phone}`, 
+          phone: `+380${form.phone}`,
+          telegram: tgHandle,
         }),
       });
 
@@ -101,7 +107,6 @@ export default function RegisterPage() {
         throw new Error(data.message || "Ошибка при регистрации");
       }
 
-      // После успешной регистрации перекидываем на страницу входа
       router.push("/login");
     } catch (err: any) {
       setError(err.message);
@@ -144,7 +149,6 @@ export default function RegisterPage() {
                 placeholder="Фамилия" value={form.lastName} onChange={handleChange} />
             </div>
 
-            {/* Кастомное поле для телефона с флагом */}
             <div>
               <div className={`flex items-center overflow-hidden rounded border ${fieldErrors.phone ? 'border-red-500' : 'border-gray-300'} bg-white focus-within:ring-1 focus-within:ring-black focus-within:border-black transition-colors`}>
                 <div className="flex items-center justify-center bg-gray-100 px-3 py-2 border-r border-gray-300 text-gray-700 select-none">
@@ -160,7 +164,16 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Поле Email с валидацией */}
+            <div>
+              <label htmlFor="telegram" className="sr-only">Telegram</label>
+              <input id="telegram" name="telegram" type="text" required
+                className={`appearance-none rounded relative block w-full px-3 py-2 border ${fieldErrors.telegram ? 'border-red-500' : 'border-gray-300'} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-black focus:border-black sm:text-sm`}
+                placeholder="Telegram (@username)" value={form.telegram} onChange={handleChange} />
+              {fieldErrors.telegram && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.telegram}</p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="email" className="sr-only">Email</label>
               <input id="email" name="email" type="email" required

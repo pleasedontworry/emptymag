@@ -3,14 +3,27 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
+  // Состояния для редактирования профиля
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    phone: "",
+    telegram: "",
+  });
+
   const [leaderboard, setLeaderboard] = useState<any>(null);
   const [currentCatIndex, setCurrentCatIndex] = useState(0);
   const categories = ["liquids", "pods", "accessories"];
@@ -47,6 +60,46 @@ export default function ProfilePage() {
     }
   };
 
+  // Включаем режим редактирования и заполняем форму текущими данными
+  const handleEditClick = () => {
+    setEditForm({
+      firstName: userData?.firstName || "",
+      lastName: userData?.lastName || "",
+      middleName: userData?.middleName || "",
+      phone: userData?.phone || "",
+      telegram: userData?.telegram || "",
+    });
+    setIsEditing(true);
+  };
+
+  // Сохраняем новые данные
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Ошибка обновления профиля");
+      }
+
+      setUserData(data.user);
+      setIsEditing(false);
+      toast.success("Данные успешно обновлены!");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -79,20 +132,74 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        {/* БЛОК ДАННЫХ ПОЛЬЗОВАТЕЛЯ */}
         <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Мои данные</h2>
-          <div className="space-y-3 text-gray-700">
-            <p><span className="font-semibold w-32 inline-block">Фамилия:</span> {userData?.lastName || "Не указана"}</p>
-            <p><span className="font-semibold w-32 inline-block">Имя:</span> {userData?.firstName || "Не указано"}</p>
-            <p><span className="font-semibold w-32 inline-block">Отчество:</span> {userData?.middleName || "Не указано"}</p>
-            <p className="pt-2"><span className="font-semibold w-32 inline-block">Email:</span> {userData?.email}</p>
-            <p><span className="font-semibold w-32 inline-block">Телефон:</span> {userData?.phone || "Не указан"}</p>
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg inline-block">
-              <p className="text-lg font-bold text-gray-900">
-                Ваша персональная скидка: <span className="text-green-600">{userData?.personalDiscount || 0}%</span>
-              </p>
-            </div>
+          <div className="flex justify-between items-center mb-4 border-b pb-2">
+            <h2 className="text-xl font-bold text-gray-800">Мои данные</h2>
+            {!isEditing && (
+              <button 
+                onClick={handleEditClick}
+                className="text-sm bg-gray-100 hover:bg-gray-200 text-black px-4 py-1.5 rounded-lg font-medium transition"
+              >
+                Редактировать
+              </button>
+            )}
           </div>
+
+          {isEditing ? (
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
+                  <input type="text" required value={editForm.lastName} onChange={(e) => setEditForm({...editForm, lastName: e.target.value})} className="w-full border-gray-300 rounded-lg px-3 py-2 border outline-none focus:border-black" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                  <input type="text" required value={editForm.firstName} onChange={(e) => setEditForm({...editForm, firstName: e.target.value})} className="w-full border-gray-300 rounded-lg px-3 py-2 border outline-none focus:border-black" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Отчество</label>
+                  <input type="text" value={editForm.middleName} onChange={(e) => setEditForm({...editForm, middleName: e.target.value})} className="w-full border-gray-300 rounded-lg px-3 py-2 border outline-none focus:border-black" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+                  <input type="tel" required value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="w-full border-gray-300 rounded-lg px-3 py-2 border outline-none focus:border-black" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telegram</label>
+                  <input type="text" required value={editForm.telegram} onChange={(e) => setEditForm({...editForm, telegram: e.target.value})} className="w-full border-gray-300 rounded-lg px-3 py-2 border outline-none focus:border-black" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Email (Логин)</label>
+                  <input type="text" disabled value={userData?.email || ""} className="w-full border-gray-200 bg-gray-50 rounded-lg px-3 py-2 border text-gray-500 cursor-not-allowed" />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={isSaving} className="bg-black text-white px-5 py-2 rounded-lg font-medium hover:bg-gray-800 transition disabled:opacity-70">
+                  {isSaving ? "Сохранение..." : "Сохранить"}
+                </button>
+                <button type="button" onClick={() => setIsEditing(false)} className="bg-gray-100 text-black px-5 py-2 rounded-lg font-medium hover:bg-gray-200 transition">
+                  Отмена
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-3 text-gray-700">
+              <p><span className="font-semibold w-32 inline-block">Фамилия:</span> {userData?.lastName || "Не указана"}</p>
+              <p><span className="font-semibold w-32 inline-block">Имя:</span> {userData?.firstName || "Не указано"}</p>
+              <p><span className="font-semibold w-32 inline-block">Отчество:</span> {userData?.middleName || "—"}</p>
+              <p><span className="font-semibold w-32 inline-block">Telegram:</span> {userData?.telegram || "Не указан"}</p>
+              <p><span className="font-semibold w-32 inline-block">Телефон:</span> {userData?.phone || "Не указан"}</p>
+              <p className="pt-2"><span className="font-semibold w-32 inline-block">Email:</span> {userData?.email}</p>
+              
+              <div className="mt-4 p-4 bg-gray-100 rounded-lg inline-block">
+                <p className="text-lg font-bold text-gray-900">
+                  Ваша персональная скидка: <span className="text-green-600">{userData?.personalDiscount || 0}%</span>
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-white shadow-md rounded-xl p-6 border border-gray-100 mb-8">

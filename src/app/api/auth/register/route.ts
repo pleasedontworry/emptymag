@@ -5,9 +5,9 @@ import bcrypt from "bcryptjs";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password, firstName, lastName, phone } = body;
+    const { email, password, firstName, lastName, phone, telegram } = body;
 
-    if (!email || !password || !phone) {
+    if (!email || !password || !phone || !telegram) {
       return NextResponse.json(
         { message: "Заполните все обязательные поля" },
         { status: 400 }
@@ -38,6 +38,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // 3. Проверяем, свободен ли Telegram
+    const existingTelegram = await prisma.user.findUnique({
+      where: { telegram },
+    });
+
+    if (existingTelegram) {
+      return NextResponse.json(
+        { message: "Этот Telegram уже используется в другом аккаунте" },
+        { status: 400 }
+      );
+    }
+
     // Хэшируем пароль
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -49,6 +61,7 @@ export async function POST(req: Request) {
         firstName,
         lastName,
         phone,
+        telegram,
       },
     });
 

@@ -44,6 +44,7 @@ model User {
   lastName         String?
   middleName       String?
   phone            String?  @unique
+  telegram         String?  @unique
   totalSpent       Int      @default(0)
   personalDiscount Int      @default(0)
   createdAt        DateTime @default(now())
@@ -76,7 +77,6 @@ model Order {
   userId        Int?
   user          User?         @relation(fields: [userId], references: [id])
   
-  // Добавлен знак ?, чтобы существующие 128 заказов не вызывали ошибку
   lastName      String?
   firstName     String?
   middleName    String?
